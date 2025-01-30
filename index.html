@@ -1,1 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбери рандомное число</title>
+    <style>
+        body {
+            background: #1c1c1c;
+            color: #ffffff;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        #result-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            margin: 20px auto;
+            padding: 10px;
+            width: 150px;
+            height: 50px;
+            background: #303030;
+            color: #ffffff;
+            border: 2px solid #505050;
+            border-radius: 10px;
+        }
+
+        .button {
+            background: #303030;
+            color: #ffffff;
+            border: none;
+            padding: 12px 25px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 20px;
+            font-size: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            background: #505050;
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .settings-menu {
+            display: none;
+            background: #505050;
+            padding: 20px;
+            margin-top: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .settings-menu input {
+            width: 50px;
+            text-align: center;
+            margin: 5px;
+        }
+
+        .plus-button {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #505050;
+            color: #ffffff;
+            border: none;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        #footer {
+            position: fixed;
+            bottom: 10px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        #footer a {
+            color: #ffffff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Темная тема для окна приветствия */
+        .welcome-window {
+            display: none;
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #222;
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+        }
+
+        .welcome-window p {
+            margin-bottom: 10px;
+        }
+
+        .welcome-window a {
+            color: #00bcd4;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="plus-area" style="position: absolute; top: 0; right: 0; width: 50px; height: 50px;"></div>
+    <button class="plus-button" id="plusButton" ondblclick="toggleSettings()">+</button>
+    <div class="content">
+        <h1>Выбери рандомное число</h1>
+        <div id="result-container">
+            🔄
+        </div>
+        <button class="button" id="actionButton" onclick="handleButtonClick(toggleAnimation)">СТАРТ</button>
+        <button class="button" onclick="handleButtonClick(reset)">СБРОС</button>
+        <div class="settings-menu" id="settingsMenu">
+            <p>Настройка чисел:</p>
+            <label>3-е: <input type="number" id="customNumber3" value="17"></label>
+            <label>5-е: <input type="number" id="customNumber5" value="13"></label>
+            <label>6-е: <input type="number" id="customNumber6" value="47"></label>
+            <label>7-е: <input type="number" id="customNumber7" value="11"></label>
+        </div>
+    </div>
+
+    <!-- Небольшая кнопка внизу с ссылкой -->
+    <div id="footer">
+        <a href="javascript:void(0)" id="footerButton">© randstuff.ru/number | 2025</a>
+    </div>
+
+    <!-- Окно приветствия -->
+    <div class="welcome-window" id="welcomeWindow">
+        <p>Добро пожаловать! Спасибо, что воспользовались приложением от Дмитрия Витера.</p>
+        <p>Получайте новости о других приложениях и обновления здесь: 
+        <a href="https://t.me/annemannstore" target="_blank" id="footerLink">https://t.me/annemannstore</a></p>
+    </div>
+
+    <script>
+        let stopCount = 0;
+        let intervalId = null;
+        let isRunning = false;
+        let settingsVisible = false;
+        let invisibleClickCount = 0;
+
+        // Тонкий звук для генерации чисел
+        const numberSound = new Audio('https://www.soundjay.com/button/beep-07.wav');
+
+        function toggleSettings() {
+            settingsVisible = !settingsVisible;
+            const menu = document.getElementById("settingsMenu");
+            menu.style.display = settingsVisible ? "block" : "none";
+        }
+
+        function toggleAnimation() {
+            const button = document.getElementById("actionButton");
+            if (isRunning) {
+                stopCount++;
+                clearInterval(intervalId);
+                isRunning = false;
+                button.innerText = "СТАРТ";
+
+                const resultContainer = document.getElementById("result-container");
+                if (stopCount === 3) resultContainer.innerText = document.getElementById("customNumber3").value;
+                else if (stopCount === 5) resultContainer.innerText = document.getElementById("customNumber5").value;
+                else if (stopCount === 6) resultContainer.innerText = document.getElementById("customNumber6").value;
+                else if (stopCount === 7) resultContainer.innerText = document.getElementById("customNumber7").value;
+            } else {
+                button.innerText = "ПАУЗА";
+                isRunning = true;
+                startAnimation();
+            }
+        }
+
+        function startAnimation() {
+            intervalId = setInterval(() => {
+                const randomNum = Math.floor(Math.random() * 100) + 1;
+                document.getElementById("result-container").innerText = randomNum;
+
+                // Воспроизведение звука при каждом изменении числа
+                numberSound.play();
+            }, 100); // Меняет число каждые 100 мс
+        }
+
+        function reset() {
+            clearInterval(intervalId);
+            isRunning = false;
+            stopCount = 0;
+            document.getElementById("result-container").innerText = "🔄";
+            document.getElementById("actionButton").innerText = "СТАРТ";
+        }
+
+        function handleButtonClick(action) {
+            if (navigator.vibrate) navigator.vibrate(50); // Вибрация на 50 мс
+            action();
+        }
+
+        // Кнопка + становится невидимой, но увеличивается
+        document.getElementById("plusButton").style.opacity = 0; // Она будет невидима изначально
+        document.getElementById("plusButton").style.width = '60px';
+        document.getElementById("plusButton").style.height = '60px';
+
+        document.getElementById("plus-area").addEventListener("click", () => {
+            invisibleClickCount++;
+            if (invisibleClickCount === 2) { // Два клика по области
+                const plusButton = document.getElementById("plusButton");
+                plusButton.style.display = plusButton.style.display === "none" ? "block" : "none"; // Открытие/закрытие кнопки
+                invisibleClickCount = 0;
+            }
+        });
+
+        // Открытие окна приветствия по клику на футер
+        document.getElementById("footerButton").addEventListener("click", () => {
+            const welcomeWindow = document.getElementById("welcomeWindow");
+            welcomeWindow.style.display = (welcomeWindow.style.display === "none" || welcomeWindow.style.display === "") ? "block" : "none";
+        });
+    </script>
+</body>
+  </html>
 
